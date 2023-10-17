@@ -1,0 +1,1 @@
+export APP_ENVIRONMENT=production;uvicorn run:app --host localhost --port 8080 --workers 8

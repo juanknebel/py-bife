@@ -1,38 +1,35 @@
-from flask import Blueprint, request, jsonify
-from datetime import datetime
-from py_bife.model.message import Message, add_message
-from schematics.models import Model
-from schematics.types import StringType, IntType, DateTimeType
+from fastapi import APIRouter, Path, Body, status, Depends, HTTPException
+from sqlalchemy.orm import Session
+from .message_schema import ResponseMessage, NewMessage
+
+from py_bife.database.database import get_db
+from py_bife.model import message_command
+
+message_router = APIRouter(prefix="/messages")
 
 
-class MessageDto(Model):
-    text = StringType(required=True)
-    to_user = IntType(required=True)
-    from_user = IntType(required=True)
+@message_router.get("/{message_id}", tags=["messages"])
+def get(
+    message_id: int = Path(title="The message id to retrieve"), db: Session = Depends(get_db)
+) -> ResponseMessage:
+    """Get the message that belongs to the id in the path"""
+    found = message_command.get(message_id=message_id, db=db)
+    if found is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+    return found
 
 
-message_api_bp = Blueprint("mesasge_api", __name__)
-
-
-@message_api_bp.get("/<int:message_id>")
-def get(message_id: int):
-    message_found = Message.query.filter_by(id=message_id).first_or_404()
-    return jsonify(message_found.to_dict()), 200
-
-
-@message_api_bp.post("")
-def add():
-    if not request.headers.get("Content-Type") == "application/json":
-        return jsonify({}), 400
-    message_dto = MessageDto(request.get_json())
-    message_dto.validate()
-    new_message = add_message(
-        Message(
-            message=message_dto.text,
-            to_user_id=message_dto.to_user,
-            from_user_id=message_dto.from_user,
-            at=datetime.utcnow(),
+@message_router.post("", status_code=status.HTTP_201_CREATED, tags=["messages"])
+def add(
+    new_message: NewMessage = Body(title="New Message", description="The message to send"),
+    db: Session = Depends(get_db),
+) -> ResponseMessage:
+    """Send a new message into the system"""
+    try:
+        added = message_command.new_message(new_message, db)
+    except message_command.MessageErrorException as me:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot send the message {me.error_type}",
         )
-    )
-
-    return jsonify(new_message.to_dict()), 201
+    return added

@@ -9,13 +9,15 @@ packages = [{include = "py_bife"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-flask = "^2.3.3"
+fastapi = {extras = ["all"], version = "^0.103.1"}
+uvicorn = "^0.23.2"
 python-dotenv = "^1.0.0"
-flask-sqlalchemy = "^3.1.1"
-sqlalchemy-serializer = "^1.4.1"
-schematics = "^2.1.1"
+sqlalchemy = "^2.0.21"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+dev = "run-local:start"

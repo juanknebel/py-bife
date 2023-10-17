@@ -1,12 +1,18 @@
 #!/usr/bin/env python
-from py_bife import create_app, db
+import uvicorn
+from py_bife import my_config
 
-app = create_app()
-print(f"Path root \n-->> {app.root_path}")
-with app.app_context():
-    from py_bife.model.user import User
 
-    db.drop_all()
-    db.create_all()
+def start():
+    uvicorn.run(
+        "py_bife:create_app",
+        reload=True,
+        workers=my_config.WORKERS,
+        host=my_config.HOST,
+        port=my_config.PORT,
+        log_level=my_config.LOG_LEVEL,
+    )
+
+
 if __name__ == "__main__":
-    app.run()
+    start()

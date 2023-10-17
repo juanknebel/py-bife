@@ -1,25 +1,20 @@
-from sqlalchemy_serializer import SerializerMixin
-from py_bife import db
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from py_bife.database.database import Base
 
 
-class Message(db.Model, SerializerMixin):
-    serialize_only = ()
-    serialize_rules = ()
+class Message(Base):
+    """
+    This object represents a message in a relational model.
+    """
 
-    id = db.Column(db.Integer, primary_key=True)
-    message = db.Column(db.String(255), nullable=False)
-    to_user_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), nullable=False
-    )
-    from_user_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), nullable=False
-    )
-    # from_user = db.relationship("User", foreign_keys=[from_user_id])
-    at = db.Column(db.DateTime, nullable=False)
+    __tablename__ = "message"
 
+    id = Column(Integer, primary_key=True, index=True)
+    message = Column(String(800), nullable=False)
+    at = Column(DateTime, nullable=False)
+    from_user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    to_user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
 
-def add_message(new_message: Message) -> Message:
-    db.session.add(new_message)
-    db.session.commit()
-
-    return new_message
+    from_user = relationship("User", foreign_keys=[from_user_id], back_populates="sent_messages")
+    to_user = relationship("User", foreign_keys=[to_user_id], back_populates="received_messages")
